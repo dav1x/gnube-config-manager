@@ -3,6 +3,10 @@ import * as Main from 'resource:///org/gnome/shell/ui/main.js';
 import { gettext as _ } from 'resource:///org/gnome/shell/extensions/extension.js';
 
 import { execCommunicateAsync } from './commandLineUtil.js';
+import {
+    findDuplicateClusterNames,
+    listClusterEntries,
+} from './clusterUtil.js';
 
 class BaseKubectl {
     static _kubectlExes = ['kubectl', 'oc'];
@@ -41,97 +45,36 @@ class BaseKubectl {
 }
 
 /**
- * @typedef {{ name: string, cluster: string }} ContextInfo
- * @typedef {{
- *   path: string,
- *   currentContext: string,
- *   contexts: ContextInfo[],
- *   clusters: string[],
- * }} KubeconfigSummary
- * @typedef {{
- *   name: string,
- *   kubeconfig: string,
- *   contexts: string[],
- *   currentContext: string,
- * }} ClusterEntry
+ * @typedef {import('./clusterUtil.js').ClusterEntry} ClusterEntry
  */
 
 export class Kubectl extends BaseKubectl {
     /**
-     * @param {string} path
-     * @returns {Promise<KubeconfigSummary|null>}
+     * Names that appear more than once across kubeconfig files.
+     *
+     * @param {ClusterEntry[]} entries
+     * @returns {string[]}
      */
-    static async getConfigSummary(path) {
-        if (this._kubectlExe === null || !path)
-            return null;
-
-        try {
-            const output = await execCommunicateAsync(
-                this._argv(path, 'config', 'view', '-o', 'json'));
-            const data = JSON.parse(output);
-            const contexts = (data.contexts || []).map(c => ({
-                name: c.name,
-                cluster: c.context?.cluster || '',
-            })).filter(c => c.name);
-
-            const clusters = [...new Set([
-                ...(data.clusters || []).map(c => c.name).filter(Boolean),
-                ...contexts.map(c => c.cluster).filter(Boolean),
-            ])];
-
-            return {
-                path,
-                currentContext: data['current-context'] || '',
-                contexts,
-                clusters,
-            };
-        } catch (e) {
-            console.error(`${this._extensionUUID}: cannot read kubeconfig ${path}: ${e}`);
-            return null;
-        }
+    static findDuplicateClusterNames(entries) {
+        return findDuplicateClusterNames(entries);
     }
 
     /**
-     * Collect unique clusters across kubeconfig files.
-     * Duplicate cluster names from different files get a path suffix in `id`.
+     * Collect clusters across kubeconfig files.
+     * Exact duplicates (same name + same file) are skipped.
+     * Same name from different files are kept and marked `duplicateName`.
      *
      * @param {string[]} paths
      * @returns {Promise<ClusterEntry[]>}
      */
     static async listClusters(paths) {
-        /** @type {ClusterEntry[]} */
-        const entries = [];
-        const seenNames = new Map();
-
-        for (const path of paths) {
-            const summary = await this.getConfigSummary(path);
-            if (!summary)
-                continue;
-
-            for (const clusterName of summary.clusters) {
-                const contexts = summary.contexts
-                    .filter(c => c.cluster === clusterName)
-                    .map(c => c.name);
-
-                if (contexts.length === 0)
-                    continue;
-
-                const count = (seenNames.get(clusterName) || 0) + 1;
-                seenNames.set(clusterName, count);
-
-                const currentForCluster = contexts.includes(summary.currentContext)
-                    ? summary.currentContext
-                    : contexts[0];
-
-                entries.push({
-                    name: clusterName,
-                    kubeconfig: path,
-                    contexts,
-                    currentContext: currentForCluster,
-                });
-            }
+        const entries = await listClusterEntries(paths, this._kubectlExe);
+        const dups = findDuplicateClusterNames(entries);
+        if (dups.length > 0) {
+            console.warn(
+                `${this._extensionUUID}: duplicate cluster names across kubeconfigs: ` +
+                `${dups.join(', ')}`);
         }
-
         return entries;
     }
 

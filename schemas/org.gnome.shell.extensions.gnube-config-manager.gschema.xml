@@ -43,7 +43,12 @@
         <key type="s" name="active-cluster-name">
             <default>''</default>
             <summary>Active cluster name</summary>
-            <description>Display name of the currently selected cluster</description>
+            <description>Kubeconfig cluster name of the currently selected cluster</description>
+        </key>
+        <key type="a{ss}" name="cluster-labels">
+            <default>{}</default>
+            <summary>Custom cluster labels</summary>
+            <description>Map of cluster entry keys to custom display labels. Keys are "name&lt;newline&gt;kubeconfig-path".</description>
         </key>
     </schema>
 </schemalist>

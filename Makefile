@@ -3,7 +3,7 @@ INSTALLNAME = gnube-config-manager@dav1x
 NAME = gnube-config-manager
 
 BASE_MODULES = extension.js metadata.json LICENSE README.md
-EXTRA_MODULES = kubeIndicator.js kubePopupMenuItem.js prefs.js kubectl.js commandLineUtil.js utils.js kubeEnv.js
+EXTRA_MODULES = kubeIndicator.js kubePopupMenuItem.js prefs.js kubectl.js commandLineUtil.js utils.js kubeEnv.js clusterUtil.js
 
 clean:
 	rm -rf _build

@@ -6,11 +6,17 @@ import GLib from 'gi://GLib';
 import { ExtensionPreferences, gettext as _ } from 'resource:///org/gnome/Shell/Extensions/js/extensions/prefs.js';
 
 import { expandPath } from './kubeEnv.js';
+import {
+    clusterEntryKey,
+    getClusterLabelMap,
+    listClusterEntries,
+    setClusterLabelMap,
+} from './clusterUtil.js';
 
 export default class GnubeConfigManagerPreferences extends ExtensionPreferences {
     fillPreferencesWindow(window) {
         window._settings = this.getSettings();
-        window.set_default_size(560, 560);
+        window.set_default_size(620, 640);
 
         const page = new Adw.PreferencesPage({
             title: _('General'),
@@ -26,7 +32,7 @@ export default class GnubeConfigManagerPreferences extends ExtensionPreferences 
 
         const showContextRow = new Adw.SwitchRow({
             title: _('Show current cluster'),
-            subtitle: _('Show the cluster name next to the panel icon'),
+            subtitle: _('Show the cluster label next to the panel icon'),
         });
         appearanceGroup.add(showContextRow);
         window._settings.bind('show-current-context', showContextRow, 'active',
@@ -159,6 +165,116 @@ export default class GnubeConfigManagerPreferences extends ExtensionPreferences 
 
         rebuildPathList();
         window._settings.connect('changed::kubeconfig-paths', rebuildPathList);
+
+        const labelsGroup = new Adw.PreferencesGroup({
+            title: _('Cluster labels'),
+            description: _('Defaults come from the kubeconfig server hostname (without https:// or port). Leave blank to use the default.'),
+        });
+        page.add(labelsGroup);
+
+        const labelsBox = new Gtk.Box({
+            orientation: Gtk.Orientation.VERTICAL,
+            spacing: 6,
+            margin_top: 6,
+        });
+        const labelsRow = new Adw.PreferencesRow();
+        labelsRow.set_child(labelsBox);
+        labelsGroup.add(labelsRow);
+
+        const rebuildLabelList = () => {
+            while (labelsBox.get_first_child())
+                labelsBox.remove(labelsBox.get_first_child());
+
+            const loading = new Gtk.Label({
+                label: _('Loading clusters…'),
+                xalign: 0,
+                margin_start: 12,
+                margin_end: 12,
+                margin_top: 6,
+                margin_bottom: 6,
+            });
+            loading.add_css_class('dim-label');
+            labelsBox.append(loading);
+
+            listClusterEntries(window._settings.get_strv('kubeconfig-paths'))
+                .then(entries => {
+                    while (labelsBox.get_first_child())
+                        labelsBox.remove(labelsBox.get_first_child());
+
+                    if (entries.length === 0) {
+                        const empty = new Gtk.Label({
+                            label: _('No clusters found in configured kubeconfig paths'),
+                            xalign: 0,
+                            margin_start: 12,
+                            margin_end: 12,
+                            margin_top: 6,
+                            margin_bottom: 6,
+                        });
+                        empty.add_css_class('dim-label');
+                        labelsBox.append(empty);
+                        return;
+                    }
+
+                    const labelMap = getClusterLabelMap(window._settings);
+                    for (const entry of entries) {
+                        const key = clusterEntryKey(entry.name, entry.kubeconfig);
+                        const home = expandPath('~');
+                        let path = entry.kubeconfig;
+                        if (path.startsWith(`${home}/`))
+                            path = `~/${path.slice(home.length + 1)}`;
+
+                        const row = new Adw.EntryRow({
+                            title: entry.defaultLabel || entry.name,
+                            text: labelMap[key] || '',
+                        });
+                        row.set_tooltip_text(
+                            `${entry.name}\n${entry.server || _('(no server)')}\n${path}`);
+
+                        const hint = new Gtk.Label({
+                            label: entry.server
+                                ? `${_('Default')}: ${entry.defaultLabel}`
+                                : `${_('Default')}: ${entry.name}`,
+                            xalign: 0,
+                            margin_start: 12,
+                            margin_end: 12,
+                        });
+                        hint.add_css_class('dim-label');
+                        hint.add_css_class('caption');
+
+                        const applyLabel = () => {
+                            const map = getClusterLabelMap(window._settings);
+                            const value = row.get_text().trim();
+                            if (value)
+                                map[key] = value;
+                            else
+                                delete map[key];
+                            setClusterLabelMap(window._settings, map);
+                        };
+                        row.connect('changed', applyLabel);
+                        row.connect('entry-activated', applyLabel);
+
+                        labelsBox.append(row);
+                        labelsBox.append(hint);
+                    }
+                })
+                .catch(e => {
+                    while (labelsBox.get_first_child())
+                        labelsBox.remove(labelsBox.get_first_child());
+                    const err = new Gtk.Label({
+                        label: _(`Failed to load clusters: ${e}`),
+                        xalign: 0,
+                        margin_start: 12,
+                        margin_end: 12,
+                        margin_top: 6,
+                        margin_bottom: 6,
+                    });
+                    err.add_css_class('dim-label');
+                    labelsBox.append(err);
+                });
+        };
+
+        rebuildLabelList();
+        window._settings.connect('changed::kubeconfig-paths', rebuildLabelList);
 
         const instrumentationGroup = new Adw.PreferencesGroup({
             title: _('Instrumentation'),
