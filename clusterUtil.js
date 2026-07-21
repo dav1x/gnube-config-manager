@@ -223,7 +223,7 @@ export async function listClusterEntries(paths, kubectlExe = null) {
         }
     }
 
-    // Same default server hostname ⇒ keep oldest (earliest mtime / scan order), drop newer
+    // Same default server hostname ⇒ keep newest (latest mtime / scan order), drop older
     /** @type {Map<string, typeof candidates[0]>} */
     const byLabel = new Map();
     const dropped = [];
@@ -240,10 +240,10 @@ export async function listClusterEntries(paths, kubectlExe = null) {
             (entry._mtime === existing._mtime && entry._order > existing._order);
 
         if (entryIsNewer) {
-            dropped.push(entry);
-        } else {
             dropped.push(existing);
             byLabel.set(label, entry);
+        } else {
+            dropped.push(entry);
         }
     }
 

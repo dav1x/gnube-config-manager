@@ -44,17 +44,26 @@ export function isDirectory(path) {
 }
 
 /**
- * Collect regular files under a directory (recursive).
+ * Collect regular files in a directory up to maxDepth.
+ * Depth 1 = immediate children only (no subdirectory descent).
  * Skips hidden names (leading '.').
  *
  * @param {string} dirPath
+ * @param {number} [maxDepth=1]
  * @returns {string[]}
  */
-export function listFilesInDirectory(dirPath) {
+export function listFilesInDirectory(dirPath, maxDepth = 1) {
     const results = [];
     const dir = Gio.File.new_for_path(dirPath);
 
-    const visit = directory => {
+    /**
+     * @param {Gio.File} directory
+     * @param {number} depth remaining depth (1 = this directory only)
+     */
+    const visit = (directory, depth) => {
+        if (depth < 1)
+            return;
+
         let enumerator;
         try {
             enumerator = directory.enumerate_children(
@@ -74,7 +83,7 @@ export function listFilesInDirectory(dirPath) {
             const child = directory.get_child(name);
             const type = info.get_file_type();
             if (type === Gio.FileType.DIRECTORY) {
-                visit(child);
+                visit(child, depth - 1);
             } else if (type === Gio.FileType.REGULAR) {
                 results.push(child.get_path());
             }
@@ -82,14 +91,14 @@ export function listFilesInDirectory(dirPath) {
         enumerator.close(null);
     };
 
-    visit(dir);
+    visit(dir, maxDepth);
     results.sort();
     return results;
 }
 
 /**
  * Resolve configured kubeconfig paths to concrete files.
- * Directory entries are expanded to every regular file beneath them.
+ * Directory entries expand to regular files up to depth 1 (immediate children only).
  *
  * @param {string[]} paths
  * @returns {string[]}

@@ -23,7 +23,7 @@
         <key type="as" name="kubeconfig-paths">
             <default>['~/.kube/config']</default>
             <summary>Kubeconfig file and directory paths</summary>
-            <description>List of kubeconfig files and directories. Directories are scanned recursively for files.</description>
+            <description>List of kubeconfig files and directories. Directories are scanned one level deep for files.</description>
         </key>
         <key type="b" name="merge-kubeconfigs">
             <default>false</default>

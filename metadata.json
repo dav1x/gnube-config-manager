@@ -3,6 +3,8 @@
     "description": "Switch kubeconfig files and kubectl contexts from the top bar. Supports multiple kubeconfig paths, optional merging, and exporting KUBECONFIG.",
     "uuid": "gnube-config-manager@dav1x",
     "url": "https://github.com/dav1x/gnube-config-manager",
+    "version": 1,
+    "version-name": "0.1",
     "settings-schema": "org.gnome.shell.extensions.gnube-config-manager",
     "shell-version": [
         "45",

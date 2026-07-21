@@ -65,7 +65,7 @@ export default class GnubeConfigManagerPreferences extends ExtensionPreferences 
 
         const kubeGroup = new Adw.PreferencesGroup({
             title: _('Kubeconfig paths'),
-            description: _('Add kubeconfig files and/or directories. Directories are scanned recursively for kubeconfig files.'),
+            description: _('Add kubeconfig files and/or directories. Directories are scanned one level deep for kubeconfig files.'),
         });
         page.add(kubeGroup);
 
@@ -294,6 +294,18 @@ export default class GnubeConfigManagerPreferences extends ExtensionPreferences 
         instrumentationGroup.add(clusterReachability);
         window._settings.bind('cluster-poll-interval-seconds', clusterReachability,
             'value', Gio.SettingsBindFlags.DEFAULT);
+
+        const aboutGroup = new Adw.PreferencesGroup({
+            title: _('About'),
+        });
+        page.add(aboutGroup);
+
+        const version = this.metadata['version-name'] || String(this.metadata.version || '');
+        const versionRow = new Adw.ActionRow({
+            title: _('Version'),
+            subtitle: version,
+        });
+        aboutGroup.add(versionRow);
     }
 
     /**
