@@ -12,6 +12,7 @@ import {
     listClusterEntries,
     setClusterLabelMap,
 } from './clusterUtil.js';
+import { displayVersion } from './utils.js';
 
 export default class GnubeConfigManagerPreferences extends ExtensionPreferences {
     fillPreferencesWindow(window) {
@@ -300,10 +301,9 @@ export default class GnubeConfigManagerPreferences extends ExtensionPreferences 
         });
         page.add(aboutGroup);
 
-        const version = this.metadata['version-name'] || String(this.metadata.version || '');
         const versionRow = new Adw.ActionRow({
             title: _('Version'),
-            subtitle: version,
+            subtitle: displayVersion(this.metadata, this.path),
         });
         aboutGroup.add(versionRow);
     }
