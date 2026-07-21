@@ -7,6 +7,9 @@ const ENV_DIR = GLib.build_filenamev([GLib.get_user_config_dir(), 'environment.d
 const ENV_FILE = GLib.build_filenamev([ENV_DIR, '99-gnube-config-manager.conf']);
 const STATE_DIR = GLib.build_filenamev([GLib.get_user_config_dir(), 'gnube-config-manager']);
 const SHELL_ENV_FILE = GLib.build_filenamev([STATE_DIR, 'env.sh']);
+/** Fedora/bashrc.d hook so Ptyxis and other non-shell-child terminals get KUBECONFIG. */
+const BASHRC_D_DIR = GLib.build_filenamev([GLib.get_home_dir(), '.bashrc.d']);
+const BASHRC_D_SNIPPET = GLib.build_filenamev([BASHRC_D_DIR, '99-gnube-config-manager.sh']);
 /** Stable path that shells should export; retargeted on each switch. */
 export const MANAGED_KUBECONFIG = GLib.build_filenamev([STATE_DIR, 'kubeconfig']);
 
@@ -224,13 +227,27 @@ export async function setKubeconfigEnv(value, extensionUuid = 'gnube-config-mana
     try {
         const shellContents =
             `# Managed by ${extensionUuid}\n` +
-            `# Add once to ~/.bashrc:\n` +
-            `#   [ -f ~/.config/gnube-config-manager/env.sh ] && . ~/.config/gnube-config-manager/env.sh\n` +
-            `# After that, cluster switches apply to this shell automatically via the symlink.\n` +
+            `# Sourced from ~/.bashrc.d/99-gnube-config-manager.sh (installed automatically).\n` +
+            `# Cluster switches retarget the managed kubeconfig symlink; no re-export needed.\n` +
             `export KUBECONFIG='${exportPath.replace(/'/g, `'\\''`)}'\n`;
         GLib.file_set_contents(SHELL_ENV_FILE, shellContents);
     } catch (e) {
         console.error(`${extensionUuid}: failed to write shell env file: ${e}`);
+    }
+
+    // Ptyxis (and similar) spawn shells via an agent that does not inherit
+    // gnome-shell's GLib.setenv; source env.sh from ~/.bashrc.d instead.
+    try {
+        const bashrcDir = Gio.File.new_for_path(BASHRC_D_DIR);
+        if (!bashrcDir.query_exists(null))
+            bashrcDir.make_directory_with_parents(null);
+
+        const snippetContents =
+            `# Managed by ${extensionUuid} — remove this file to disable\n` +
+            `[ -f "${SHELL_ENV_FILE}" ] && . "${SHELL_ENV_FILE}"\n`;
+        GLib.file_set_contents(BASHRC_D_SNIPPET, snippetContents);
+    } catch (e) {
+        console.error(`${extensionUuid}: failed to write bashrc.d snippet: ${e}`);
     }
 
     try {
