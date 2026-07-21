@@ -24,6 +24,8 @@ build: compile-schemas
 	cp -r schemas _build
 	cp -r icons _build
 	cp -r lib _build
+	# Fallback commit id for installed copies (prefs prefers live `git` when available)
+	git rev-parse --short HEAD > _build/commit 2>/dev/null || echo unknown > _build/commit
 
 package: build
 	cd _build ; \
