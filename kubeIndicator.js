@@ -15,6 +15,10 @@ import {
     resolvePaths,
     setKubeconfigEnv,
 } from './kubeEnv.js';
+import {
+    displayLabelForCluster,
+    getClusterLabelMap,
+} from './clusterUtil.js';
 
 export const KubeIndicator = GObject.registerClass({ GTypeName: 'GnubeConfigManagerIndicator' },
     class KubeIndicator extends PanelMenu.Button {
@@ -122,19 +126,11 @@ export const KubeIndicator = GObject.registerClass({ GTypeName: 'GnubeConfigMana
         }
 
         /**
-         * @param {import('./kubectl.js').ClusterEntry} entry
+         * @param {import('./clusterUtil.js').ClusterEntry} entry
          * @returns {string}
          */
         _clusterLabel(entry) {
-            const sameName = this._clusters.filter(c => c.name === entry.name).length > 1;
-            if (!sameName)
-                return entry.name;
-
-            const home = expandPath('~');
-            let path = entry.kubeconfig;
-            if (path.startsWith(`${home}/`))
-                path = `~/${path.slice(home.length + 1)}`;
-            return `${entry.name}  —  ${path}`;
+            return displayLabelForCluster(entry, getClusterLabelMap(this._settings));
         }
 
         async _refreshPanelLabel() {
@@ -146,10 +142,13 @@ export const KubeIndicator = GObject.registerClass({ GTypeName: 'GnubeConfigMana
                     this._clusters = await Kubectl.listClusters(this._configPaths());
                 this._selectedCluster = this._resolveSelectedCluster();
 
-                const kubeconfig = this._selectedCluster?.kubeconfig ||
-                    this._activeKubeconfigPath().split(':')[0] || null;
-                const cluster = this._selectedCluster?.name ||
-                    await Kubectl.getCurrentCluster(kubeconfig);
+                if (this._selectedCluster) {
+                    this.label.text = this._clusterLabel(this._selectedCluster);
+                    return;
+                }
+
+                const kubeconfig = this._activeKubeconfigPath().split(':')[0] || null;
+                const cluster = await Kubectl.getCurrentCluster(kubeconfig);
                 this.label.text = cluster || _('kubectl');
             } catch (e) {
                 console.error(`${this._extensionObject.metadata.uuid}: ${e}`);
@@ -270,11 +269,11 @@ export const KubeIndicator = GObject.registerClass({ GTypeName: 'GnubeConfigMana
                     await Kubectl.useContext(context, entry.kubeconfig);
 
                 if (this.label)
-                    this.label.text = entry.name;
+                    this.label.text = this._clusterLabel(entry);
 
                 Main.notify(
                     this._extensionObject.metadata.name,
-                    `${_('Switched to cluster')} ${entry.name}`);
+                    `${_('Switched to cluster')} ${this._clusterLabel(entry)}`);
             } catch (e) {
                 console.error(`${this._extensionObject.metadata.uuid}: select cluster failed: ${e}`);
                 Main.notifyError(
@@ -346,6 +345,7 @@ export const KubeIndicator = GObject.registerClass({ GTypeName: 'GnubeConfigMana
             this._settingsSignals.push(
                 this._settings.connect('changed::show-current-context', () => this._setView()),
                 this._settings.connect('changed::panel-icon', () => this._setView()),
+                this._settings.connect('changed::cluster-labels', () => this._refreshPanelLabel()),
                 this._settings.connect('changed::kubeconfig-paths', () => {
                     this._applyKubeconfigFromSettings()
                         .then(() => this._refreshPanelLabel())
