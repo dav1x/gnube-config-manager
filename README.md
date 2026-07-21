@@ -7,7 +7,7 @@ GNOME Shell extension for switching Kubernetes kubeconfig files and contexts fro
 - Panel icon (or current context label) in the top bar
 - Switch kubectl contexts from the menu
 - Configure multiple kubeconfig file or directory paths in preferences
-- Directories are scanned recursively; every regular file is treated as a kubeconfig
+- Directories are scanned one level deep; every regular file is treated as a kubeconfig
 - Select a single kubeconfig, or merge all (colon-separated `KUBECONFIG`)
 - Exports `KUBECONFIG` via:
   - the gnome-shell process environment (inherited by apps like Kitty launched from the shell)

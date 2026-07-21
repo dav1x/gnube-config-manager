@@ -65,7 +65,7 @@ export default class GnubeConfigManagerPreferences extends ExtensionPreferences 
 
         const kubeGroup = new Adw.PreferencesGroup({
             title: _('Kubeconfig paths'),
-            description: _('Add kubeconfig files and/or directories. Directories are scanned recursively for kubeconfig files.'),
+            description: _('Add kubeconfig files and/or directories. Directories are scanned one level deep for kubeconfig files.'),
         });
         page.add(kubeGroup);
 
