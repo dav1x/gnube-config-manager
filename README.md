@@ -10,14 +10,15 @@ GNOME Shell extension for switching Kubernetes kubeconfig files and contexts fro
 - Directories are scanned recursively; every regular file is treated as a kubeconfig
 - Select a single kubeconfig, or merge all (colon-separated `KUBECONFIG`)
 - Exports `KUBECONFIG` via:
-  - the gnome-shell process environment
+  - the gnome-shell process environment (inherited by apps like Kitty launched from the shell)
   - `systemctl --user set-environment`
   - `~/.config/environment.d/99-gnube-config-manager.conf` (picked up on next login)
+  - `~/.config/gnube-config-manager/env.sh`, sourced by `~/.bashrc.d/99-gnube-config-manager.sh` (needed for Ptyxis)
 
 ## Dependencies
 
 - `kubectl` or `oc` on `PATH`
-- GNOME Shell 45+ (including 49)
+- GNOME Shell 45+ (including 50 / Fedora 44)
 
 ## Install from git
 
@@ -44,12 +45,18 @@ gnome-extensions prefs gnube-config-manager@dav1x
   `~/.config/gnube-config-manager/kubeconfig`
   (symlink to the active file, or a flattened merge). Cluster switches retarget
   that path, so existing shells pick up the new cluster on the next command.
-- Add this once to `~/.bashrc` (or equivalent):
+- **Kitty** (and similar terminals started as children of gnome-shell) inherit
+  `KUBECONFIG` from the shell process after a cluster switch.
+- **Ptyxis** (the default GNOME terminal) starts shells via `ptyxis-agent`, which
+  does not inherit that environment. On each cluster switch the extension
+  installs `~/.bashrc.d/99-gnube-config-manager.sh`, which sources
+  `~/.config/gnube-config-manager/env.sh`. Open a **new** Ptyxis tab after the
+  first switch (existing tabs keep their old environment). Remove the snippet
+  file to disable this hook.
+- If your `~/.bashrc` does not load `~/.bashrc.d`, add once:
 
 ```bash
 [ -f ~/.config/gnube-config-manager/env.sh ] && . ~/.config/gnube-config-manager/env.sh
 ```
 
-- Then open a new terminal (or `source ~/.bashrc`). After that, switching
-  clusters in the panel is enough — no need to re-export `KUBECONFIG` each time.
 - `environment.d` / systemd updates cover newly launched apps from the session.
