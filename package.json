@@ -1,0 +1,34 @@
+{
+    "name": "gnube-config-manager",
+    "version": "1.0.0",
+    "description": "GNOME Shell extension to switch kubeconfig files and contexts",
+    "directories": {
+        "lib": "lib"
+    },
+    "scripts": {
+        "format": "eslint --write \"{,!(node_modules)/**/}*.{js,jsx}\"",
+        "test": "echo \"Error: no test specified\" && exit 1"
+    },
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/dav1x/gnube-config-manager.git"
+    },
+    "keywords": [
+        "gnome",
+        "extension",
+        "kubeconfig",
+        "kubectl",
+        "config",
+        "context",
+        "gnube"
+    ],
+    "author": "dav1x",
+    "license": "GPL-3.0",
+    "bugs": {
+        "url": "https://github.com/dav1x/gnube-config-manager/issues"
+    },
+    "homepage": "https://github.com/dav1x/gnube-config-manager#readme",
+    "devDependencies": {
+        "eslint": "^8.56.0"
+    }
+}

@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<schemalist gettext-domain="gnome-shell-extensions">
+    <schema path="/org/gnome/shell/extensions/gnube-config-manager/" id="org.gnome.shell.extensions.gnube-config-manager">
+        <key type="b" name="show-current-context">
+            <default>false</default>
+            <summary>Show current cluster</summary>
+            <description>Whether to show the current cluster name next to the panel icon</description>
+        </key>
+        <key type="s" name="panel-icon">
+            <default>'white'</default>
+            <summary>Panel icon emblem</summary>
+            <description>Kubernetes emblem style for the panel icon: white or color</description>
+            <choices>
+                <choice value="white"/>
+                <choice value="color"/>
+            </choices>
+        </key>
+        <key type="i" name="cluster-poll-interval-seconds">
+            <default>300</default>
+            <summary>Seconds before next update</summary>
+            <description>Seconds between cluster reachability polls for each context</description>
+        </key>
+        <key type="as" name="kubeconfig-paths">
+            <default>['~/.kube/config']</default>
+            <summary>Kubeconfig file and directory paths</summary>
+            <description>List of kubeconfig files and directories. Directories are scanned recursively for files.</description>
+        </key>
+        <key type="b" name="merge-kubeconfigs">
+            <default>false</default>
+            <summary>Merge kubeconfigs</summary>
+            <description>When enabled, set KUBECONFIG to all configured paths joined with colons</description>
+        </key>
+        <key type="s" name="active-kubeconfig">
+            <default>''</default>
+            <summary>Active kubeconfig</summary>
+            <description>Currently selected kubeconfig path, or empty to use the first configured path</description>
+        </key>
+        <key type="s" name="active-cluster">
+            <default>''</default>
+            <summary>Active cluster key</summary>
+            <description>Internal key identifying the selected cluster (name + kubeconfig path)</description>
+        </key>
+        <key type="s" name="active-cluster-name">
+            <default>''</default>
+            <summary>Active cluster name</summary>
+            <description>Display name of the currently selected cluster</description>
+        </key>
+    </schema>
+</schemalist>
