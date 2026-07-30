@@ -2,6 +2,20 @@
 
 GNOME Shell extension for switching Kubernetes kubeconfig files and contexts from the top bar.
 
+## Screenshots
+
+Panel menu for switching clusters and contexts:
+
+![Panel menu](screenshots/panel-menu.png)
+
+Preferences for kubeconfig paths, cluster labels, and polling:
+
+![Preferences](screenshots/preferences.png)
+
+Terminal picking up the active cluster after a switch:
+
+![Cluster info](screenshots/cluster-info.png)
+
 ## Features
 
 - Panel icon (or current context label) in the top bar
