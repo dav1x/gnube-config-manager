@@ -29,7 +29,6 @@ export const KubeIndicator = GObject.registerClass({ GTypeName: 'GnubeConfigMana
             this._settingsSignals = [];
             this._menuSignal = 0;
             this._idleId = 0;
-            this._destroyed = false;
             this._busy = false;
             /** @type {import('./kubectl.js').ClusterEntry[]} */
             this._clusters = [];
@@ -364,8 +363,7 @@ export const KubeIndicator = GObject.registerClass({ GTypeName: 'GnubeConfigMana
             this._clearIdle();
             this._idleId = GLib.idle_add(GLib.PRIORITY_DEFAULT_IDLE, () => {
                 this._idleId = 0;
-                if (!this._destroyed)
-                    callback();
+                callback();
                 return GLib.SOURCE_REMOVE;
             });
         }
@@ -378,7 +376,6 @@ export const KubeIndicator = GObject.registerClass({ GTypeName: 'GnubeConfigMana
         }
 
         destroy() {
-            this._destroyed = true;
             this._clearIdle();
             if (this._menuSignal) {
                 this.menu.disconnect(this._menuSignal);
