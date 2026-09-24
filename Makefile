@@ -14,18 +14,19 @@ install: build
 	mkdir -p $(INSTALLBASE)/$(INSTALLNAME)
 	cp -r ./_build/* $(INSTALLBASE)/$(INSTALLNAME)/
 
+# Local convenience only — GNOME Shell 45+ compiles schemas itself; do not ship
+# schemas/gschemas.compiled in packages or installs.
 compile-schemas:
 	glib-compile-schemas ./schemas/
 
-build: compile-schemas
+build:
 	rm -rf ./_build
 	mkdir _build
 	cp $(BASE_MODULES) $(EXTRA_MODULES) _build
-	cp -r schemas _build
+	mkdir -p _build/schemas
+	cp schemas/*.gschema.xml _build/schemas/
 	cp -r icons _build
 	cp -r lib _build
-	# Fallback commit id for installed copies (prefs prefers live `git` when available)
-	git rev-parse --short HEAD > _build/commit 2>/dev/null || echo unknown > _build/commit
 
 package: build
 	cd _build ; \

@@ -46,6 +46,7 @@ export const KubePopupMenuItem = GObject.registerClass(
             this._setClusterStatusIcon('network-error-symbolic');
 
             this._timerid = null;
+            this._throttledClusterPoll = null;
             this._bindSettingsChanges();
             this._updateClusterStatus().catch(e =>
                 console.error(`${this._extensionObject.metadata.uuid}: ${e}`));
@@ -67,9 +68,9 @@ export const KubePopupMenuItem = GObject.registerClass(
         }
 
         _bindSettingsChanges() {
-            const throttledClusterPoll = throttle(this._restartClusterPoll.bind(this), 500);
+            this._throttledClusterPoll = throttle(this._restartClusterPoll.bind(this), 500);
             this._settings.connect('changed::cluster-poll-interval-seconds', () => {
-                throttledClusterPoll();
+                this._throttledClusterPoll();
             });
         }
 
@@ -91,11 +92,8 @@ export const KubePopupMenuItem = GObject.registerClass(
 
         _stopClusterPoll() {
             if (this._timerid !== null) {
-                if (GLib.source_remove(this._timerid)) {
-                    this._timerid = null;
-                } else {
-                    console.error(`${this._extensionObject.metadata.uuid}: cannot remove timer ${this._timerid}`);
-                }
+                GLib.source_remove(this._timerid);
+                this._timerid = null;
             }
         }
 
@@ -135,6 +133,8 @@ export const KubePopupMenuItem = GObject.registerClass(
 
         _onDestroy() {
             this._destroyed = true;
+            this._throttledClusterPoll?.cancel();
+            this._throttledClusterPoll = null;
             this._stopClusterPoll();
         }
     });
