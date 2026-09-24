@@ -13,6 +13,8 @@ install: build
 	rm -rf $(INSTALLBASE)/$(INSTALLNAME)
 	mkdir -p $(INSTALLBASE)/$(INSTALLNAME)
 	cp -r ./_build/* $(INSTALLBASE)/$(INSTALLNAME)/
+	# Local installs need a compiled schema; EGO packages must not ship it.
+	glib-compile-schemas $(INSTALLBASE)/$(INSTALLNAME)/schemas/
 
 # Local convenience only — GNOME Shell 45+ compiles schemas itself; do not ship
 # schemas/gschemas.compiled in packages or installs.
