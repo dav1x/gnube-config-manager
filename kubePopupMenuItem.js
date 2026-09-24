@@ -24,7 +24,6 @@ export const KubePopupMenuItem = GObject.registerClass(
             super(text.trim(), params);
             this._extensionObject = extensionObject;
             this._settings = this._extensionObject.getSettings();
-            this._destroyed = false;
             this._itemName = text.trim();
             this._kubeconfig = kubeconfig;
             this._checkReachability = true;
@@ -98,11 +97,11 @@ export const KubePopupMenuItem = GObject.registerClass(
         }
 
         async _updateClusterStatus() {
-            if (this._destroyed || !this._checkReachability)
+            if (!this._checkReachability)
                 return;
 
             const status = await Kubectl.clusterIsReachable(this._itemName, this._kubeconfig);
-            if (this._destroyed)
+            if (!this._checkReachability)
                 return;
 
             this._setClusterStatusIcon(status
@@ -114,9 +113,6 @@ export const KubePopupMenuItem = GObject.registerClass(
          * @param {string} iconName
          */
         _setClusterStatusIcon(iconName) {
-            if (this._destroyed)
-                return;
-
             if (this._clusterStatusIcon === null) {
                 this._clusterStatusIcon = new St.Icon({
                     icon_name: iconName,
@@ -132,9 +128,10 @@ export const KubePopupMenuItem = GObject.registerClass(
         }
 
         _onDestroy() {
-            this._destroyed = true;
-            this._throttledClusterPoll?.cancel();
-            this._throttledClusterPoll = null;
-            this._stopClusterPoll();
+            if (this._throttledClusterPoll) {
+                this._throttledClusterPoll.cancel();
+                this._throttledClusterPoll = null;
+            }
+            this.setCheckReachability(false);
         }
     });
