@@ -28,6 +28,8 @@ export const KubeIndicator = GObject.registerClass({ GTypeName: 'GnubeConfigMana
             this._settings = this._extensionObject.getSettings();
             this._settingsSignals = [];
             this._menuSignal = 0;
+            this._idleId = 0;
+            this._destroyed = false;
             this._busy = false;
             /** @type {import('./kubectl.js').ClusterEntry[]} */
             this._clusters = [];
@@ -191,10 +193,9 @@ export const KubeIndicator = GObject.registerClass({ GTypeName: 'GnubeConfigMana
                         item.connect('activate', () => {
                             const chosen = entry;
                             this.menu.close();
-                            GLib.idle_add(GLib.PRIORITY_DEFAULT_IDLE, () => {
+                            this._runIdle(() => {
                                 this._selectCluster(chosen).catch(e =>
                                     console.error(`${this._extensionObject.metadata.uuid}: ${e}`));
-                                return GLib.SOURCE_REMOVE;
                             });
                         });
                         this.clustersMenuSection.addMenuItem(item);
@@ -232,10 +233,9 @@ export const KubeIndicator = GObject.registerClass({ GTypeName: 'GnubeConfigMana
                             const chosen = context;
                             const cfg = kubeconfig;
                             this.menu.close();
-                            GLib.idle_add(GLib.PRIORITY_DEFAULT_IDLE, () => {
+                            this._runIdle(() => {
                                 this._selectContext(chosen, cfg).catch(e =>
                                     console.error(`${this._extensionObject.metadata.uuid}: ${e}`));
-                                return GLib.SOURCE_REMOVE;
                             });
                         });
                         this.contextsMenuSection.addMenuItem(item);
@@ -354,7 +354,32 @@ export const KubeIndicator = GObject.registerClass({ GTypeName: 'GnubeConfigMana
             );
         }
 
+        /**
+         * Schedule work on the idle loop. Removes any previous idle source first
+         * and clears the id when the callback finishes (or on destroy/disable).
+         *
+         * @param {() => void} callback
+         */
+        _runIdle(callback) {
+            this._clearIdle();
+            this._idleId = GLib.idle_add(GLib.PRIORITY_DEFAULT_IDLE, () => {
+                this._idleId = 0;
+                if (!this._destroyed)
+                    callback();
+                return GLib.SOURCE_REMOVE;
+            });
+        }
+
+        _clearIdle() {
+            if (this._idleId !== 0) {
+                GLib.source_remove(this._idleId);
+                this._idleId = 0;
+            }
+        }
+
         destroy() {
+            this._destroyed = true;
+            this._clearIdle();
             if (this._menuSignal) {
                 this.menu.disconnect(this._menuSignal);
                 this._menuSignal = 0;

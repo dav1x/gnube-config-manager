@@ -13,7 +13,9 @@ export default class GnubeConfigManagerExtension extends Extension {
     }
 
     disable() {
-        this.kube.destroy();
+        // KubeIndicator.destroy() removes idle sources, disconnects signals,
+        // and tears down menu items (including any GLib timeouts they own).
+        this.kube?.destroy();
         this.kube = null;
     }
 }
