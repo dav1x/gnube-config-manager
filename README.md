@@ -2,6 +2,10 @@
 
 GNOME Shell extension for switching Kubernetes kubeconfig files and contexts from the top bar.
 
+Published on extensions.gnome.org here:
+[https://extensions.gnome.org/extension/10533/gnube-config-manager/](https://extensions.gnome.org/extension/10533/gnube-config-manager/)
+
+
 ## Screenshots
 
 Panel menu for switching clusters and contexts:
