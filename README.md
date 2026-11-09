@@ -36,7 +36,7 @@ Terminal picking up the active cluster after a switch:
 ## Dependencies
 
 - `kubectl` or `oc` on `PATH`
-- GNOME Shell 45+ (including 50 / Fedora 44)
+- GNOME Shell 45+ (including 51 / Fedora 45)
 
 ## Install from git
 
